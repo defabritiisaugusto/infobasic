@@ -11,8 +11,8 @@ class Game extends BaseModel
     use WithValidate;
 
     public ?int $id_round = null;
-    public ?int $team1_id = null;
-    public ?int $team2_id = null;
+    public ?int $id_team1 = null;
+    public ?int $id_team2 = null;
     public ?int $goals_team1 = null;
     public ?int $goals_team2 = null;
     public ?int $winner_team_id = null;
@@ -38,7 +38,7 @@ class Game extends BaseModel
                     }
                 }
             }],
-            "team1_id" => ["required", "numeric", function ($field, $value, $data) {
+            "id_team1" => ["sometimes", "numeric", function ($field, $value, $data) {
                 if ($value !== null && $value !== '') {
                     $team = Team::find((int)$value);
                     if ($team === null) {
@@ -46,7 +46,7 @@ class Game extends BaseModel
                     }
                 }
             }],
-            "team2_id" => ["required", "numeric", function ($field, $value, $data) {
+            "id_team2" => ["sometimes", "numeric", function ($field, $value, $data) {
                 if ($value !== null && $value !== '') {
                     $team = Team::find((int)$value);
                     if ($team === null) {

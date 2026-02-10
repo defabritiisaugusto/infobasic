@@ -3,6 +3,7 @@
 use App\Utils\Response;
 use App\Models\Tournament;
 use App\Utils\Request;
+use App\Services\BracketService;
 use Pecee\SimpleRouter\SimpleRouter as Router;
 use App\Models\TournamentTeam;
 use App\Models\Round;
@@ -93,83 +94,66 @@ Router::delete('/tournaments/{id}', function ($id) {
 
 // POST bracket
 
-Router::post('/tournaments/{id_tournament}/generate-bracket', function ($id_tournament) {
+Router::post('/tournaments/{id}/generate-bracket', function ($id) {
     try {
-        // 1️⃣ verifica torneo
-        $tournament = Tournament::find($id_tournament);
-        if ($tournament === null) {
-            Response::error("Torneo non trovato", Response::HTTP_NOT_FOUND)->send();
-            return;
-        }
+        $result = BracketService::generateForTournament((int)$id);
 
-        // 2️⃣ recupera squadre
-        $teams = TournamentTeam::where('id_tournament', $id_tournament);
-        $teamIds = array_map(fn($t) => $t->id_team, $teams);
-
-        if (count($teamIds) !== 8) {
-            Response::error(
-                "Il torneo deve avere esattamente 8 squadre",
-                Response::HTTP_BAD_REQUEST
-            )->send();
-            return;
-        }
-
-        // 3️⃣ crea rounds
-        $roundNames = [
-            'Quarti di finale',
-            'Semifinali',
-            'Finale'
-        ];
-
-        $rounds = [];
-
-        foreach ($roundNames as $name) {
-            $round = new Round();
-            $round->id_tournament = $id_tournament;
-            $round->name = $name;
-            $round->status = 'pending';
-            $round->save();
-
-            $rounds[] = $round;
-        }
-
-        // 4️⃣ quarti di finale
-        $firstRound = $rounds[0];
-
-        for ($i = 0; $i < 8; $i += 2) {
-            $game = new Game();
-            $game->id_round = $firstRound->id;
-            $game->team1_id = $teamIds[$i];
-            $game->team2_id = $teamIds[$i + 1];
-            $game->goals_team1 = 0;
-            $game->goals_team2 = 0;
-            $game->save();
-        }
-
-        // 5️⃣ semifinali (vuote)
-        $semiRound = $rounds[1];
-        for ($i = 0; $i < 2; $i++) {
-            $game = new Game();
-            $game->id_round = $semiRound->id;
-            $game->save();
-        }
-
-        // 6️⃣ finale (vuota)
-        $finalRound = $rounds[2];
-        $game = new Game();
-        $game->id_round = $finalRound->id;
-        $game->save();
-
-        // 7️⃣ risposta OK
         Response::success(
-            null,
+            $result,
             Response::HTTP_CREATED,
             "Bracket generato con successo"
         )->send();
-        } catch (\Exception $e) {
-            Response::error('Errore durante l\'iscrizione della squadra: ' . $e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR)->send();
-        }
-    });
+    } catch (\RuntimeException $e) {
+        Response::error($e->getMessage(), Response::HTTP_BAD_REQUEST)->send();
+    }
+});
+
+/**
+ * POST /api/tournaments/{id}/generate-semis - Genera le semifinali
+ */
+Router::post('/tournaments/{id}/generate-semis', function ($id) {
+    try {
+        $result = BracketService::createSemifinals((int)$id);
+
+        Response::success(
+            $result,
+            Response::HTTP_CREATED,
+            "Semifinali generate automaticamente"
+        )->send();
+    } catch (\RuntimeException $e) {
+        Response::error($e->getMessage(), Response::HTTP_BAD_REQUEST)->send();
+    }
+});
+
+/**
+ * POST /api/tournaments/{id}/generate-final - Genera la finale
+ */
+Router::post('/tournaments/{id}/generate-final', function ($id) {
+    try {
+        $result = BracketService::createFinal((int)$id);
+
+        Response::success(
+            $result,
+            Response::HTTP_CREATED,
+            "Finale generata automaticamente"
+        )->send();
+    } catch (\RuntimeException $e) {
+        Response::error($e->getMessage(), Response::HTTP_BAD_REQUEST)->send();
+    }
+});
+
+/**
+ * GET /api/tournaments/{id}/bracket - Restituisce l'intero tabellone del torneo
+ */
+Router::get('/tournaments/{id}/bracket', function ($id) {
+    try {
+        $result = BracketService::getBracket((int)$id);
+
+        Response::success($result)->send();
+    } catch (\RuntimeException $e) {
+        Response::error($e->getMessage(), Response::HTTP_BAD_REQUEST)->send();
+    }
+});
 
 
 
