@@ -72,6 +72,9 @@ class TournamentTeam extends BaseModel {
 
      public static function findByTournamentAndTeam(int $id_tournament, int $id_team): ?static
     {
+        // Metodo di utilità per verificare se una certa squadra partecipa ad un torneo
+        // Usato dall'endpoint /tournaments/{id}/complete per evitare che venga
+        // impostata come vincitrice una squadra che non è iscritta al torneo.
         $result = DB::select(
             "SELECT * FROM " . static::getTableName() . " WHERE id_team = :id_team AND id_tournament = :id_tournament",
             [
