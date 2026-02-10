@@ -8,6 +8,7 @@ use Pecee\SimpleRouter\SimpleRouter as Router;
 use App\Models\TournamentTeam;
 use App\Models\Round;
 use App\Models\Game;
+use App\Database\DB;
 
 /**
  * GET /api/tournaments - Lista di tutti i tornei
@@ -230,6 +231,19 @@ Router::post('/tournaments/{id}/complete', function ($id) {
             Response::error('La squadra indicata non partecipa a questo torneo', Response::HTTP_BAD_REQUEST)->send();
             return;
         }
+
+        // Imposta la squadra vincente nella tabella pivot usando la chiave composta
+        // La tabella tournament_teams non ha una colonna id, quindi non possiamo usare BaseModel::update()
+        $now = date('Y-m-d H:i:s');
+        DB::update(
+            'UPDATE tournament_teams SET status = :status, updated_at = :updated_at WHERE id_tournament = :id_tournament AND id_team = :id_team',
+            [
+                'status' => 'winner',
+                'updated_at' => $now,
+                'id_tournament' => (int)$id,
+                'id_team' => (int)$winnerTeamId,
+            ]
+        );
 
         // Imposta vincitore e chiude il torneo
         $tournament->update([
