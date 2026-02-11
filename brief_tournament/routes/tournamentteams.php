@@ -104,11 +104,11 @@ Router::post('/tournament-teams/{id_team}/tournaments/{id_tournament}', function
             return;
         }
 
-        $errors = TournamentTeam::validate($data);
-        if (!empty($errors)) {
-            Response::error('Errore di validazione', Response::HTTP_BAD_REQUEST, $errors)->send();
-            return;
-        }
+        //$errors = TournamentTeam::validate($data);
+       // if (!empty($errors)) {
+           // Response::error('Errore di validazione', Response::HTTP_BAD_REQUEST, $errors)->send();
+           // return;
+       // }
 
         $tournamentTeam = TournamentTeam::create($data)->toArray();
 

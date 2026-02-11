@@ -95,7 +95,7 @@ Router::delete('/tournaments/{id}', function ($id) {
 });
 
 
-// POST bracket
+// POST crea tabellone /tournaments/{id}/generate-bracket
 
 Router::post('/tournaments/{id}/generate-bracket', function ($id) {
     try {
